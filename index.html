@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>NEVO | Cinematic Protocol</title>
+    <style>
+        :root { --bg: #050505; --surface: #121212; --accent: #D4AF37; --text: #F3F3F3; --muted: #777; --danger: #CF3A3A; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; padding-bottom: 90px; }
+        
+        /* Typography & Layout */
+        .header { padding: 30px 20px 15px; border-bottom: 1px solid #222; background: #000; position: sticky; top: 0; z-index: 10; }
+        .logo { font-size: 28px; font-weight: 900; letter-spacing: -1.5px; color: var(--accent); margin-bottom: 4px; }
+        .subtitle { font-size: 13px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .container { padding: 20px; }
+        .view { display: none; animation: fadeIn 0.2s ease-out; }
+        .view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Components */
+        .card { background: var(--surface); border: 1px solid #1A1A1A; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+        .card h3 { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+        .card p { color: var(--muted); font-size: 14px; line-height: 1.5; }
+        
+        .btn { background: var(--accent); color: #000; width: 100%; border: none; padding: 18px; border-radius: 12px; font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: transform 0.1s; display: flex; justify-content: center; align-items: center; gap: 10px; }
+        .btn:active { transform: scale(0.97); }
+        .btn-outline { background: transparent; color: var(--accent); border: 2px solid var(--accent); }
+
+        /* Workout List rendering */
+        .exercise-row { border-bottom: 1px solid #222; padding: 16px 0; }
+        .exercise-row:last-child { border-bottom: none; }
+        .ex-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; display: flex; justify-content: space-between; }
+        .ex-load { color: var(--accent); font-size: 14px; font-weight: 800; }
+        .ex-cue { font-size: 13px; color: var(--muted); line-height: 1.4; }
+
+        /* Calendar System */
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-weight: 700; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+        .day-label { text-align: center; font-size: 11px; color: var(--muted); font-weight: 700; padding-bottom: 5px; }
+        .cal-day { aspect-ratio: 1; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; background: var(--surface); color: var(--text); border: 1px solid #222; }
+        .cal-day.completed { background: rgba(212, 175, 55, 0.15); color: var(--accent); border-color: var(--accent); box-shadow: 0 0 10px rgba(212, 175, 55, 0.2); }
+
+        /* Navigation */
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(5, 5, 5, 0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid #222; display: flex; justify-content: space-around; padding: 15px 10px 25px; z-index: 100; }
+        .nav-item { color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 10px; text-align: center; transition: color 0.2s; }
+        .nav-item.active { color: var(--accent); }
+
+        /* Timer UI */
+        .timer-circle { width: 240px; height: 240px; border-radius: 50%; border: 4px solid #222; margin: 40px auto; display: flex; align-items: center; justify-content: center; font-size: 64px; font-weight: 900; color: var(--accent); position: relative; }
+        .timer-circle.running { border-color: var(--accent); box-shadow: 0 0 30px rgba(212, 175, 55, 0.15); }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="logo">NEVO</div>
+        <div class="subtitle" id="header-status">System Standby</div>
+    </div>
+
+    <div id="view-home" class="view active container">
+        <div class="card">
+            <h3>Protocol Integrity</h3>
+            <p>Total Sessions Executed: <strong id="total-count" style="color: var(--accent); font-size: 18px;">0</strong></p>
+        </div>
+        
+        <div class="card">
+            <div class="calendar-header">
+                <span>Execution Log</span>
+                <span id="cal-month" style="color: var(--accent);"></span>
+            </div>
+            <div class="calendar-grid" id="calendar-labels"></div>
+            <div class="calendar-grid" id="calendar-body"></div>
+        </div>
+    </div>
+
+    <div id="view-protocols" class="view container">
+        <h2 style="margin-bottom: 20px;">Deploy Architecture</h2>
+        
+        <h3 style="color: var(--muted); margin-bottom: 10px; font-size: 14px;">Pure Weightlifting (Gym)</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px;">
+            <button class="btn btn-outline" onclick="loadWorkout('gym', 'pushA')">Push A</button>
+            <button class="btn btn-outline" onclick="loadWorkout('gym', 'pullA')">Pull A</button>
+            <button class="btn btn-outline" onclick="loadWorkout('gym', 'legsA')">Legs A</button>
+            <button class="btn btn-outline" onclick="loadWorkout('gym', 'pushB')">Push B</button>
+            <button class="btn btn-outline" onclick="loadWorkout('gym', 'pullB')">Pull B</button>
+            <button class="btn btn-outline" onclick="loadWorkout('gym', 'legsB')">Legs B</button>
+        </div>
+
+        <h3 style="color: var(--muted); margin-bottom: 10px; font-size: 14px;">Improvised Calisthenics (Home)</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button class="btn btn-outline" onclick="loadWorkout('home', 'push')">Push</button>
+            <button class="btn btn-outline" onclick="loadWorkout('home', 'pull')">Pull</button>
+            <button class="btn btn-outline" style="grid-column: span 2;" onclick="loadWorkout('home', 'legs')">Legs & Core</button>
+        </div>
+    </div>
+
+    <div id="view-active" class="view container">
+        <h2 id="active-title" style="margin-bottom: 20px; font-size: 24px; font-weight: 900;"></h2>
+        <div class="card" id="workout-list">
+            </div>
+        <button class="btn" style="margin-bottom: 15px;" onclick="switchView('timer')">Open Rest Timer</button>
+        <button class="btn btn-outline" style="border-color: #222; color: #FFF; background: #111;" onclick="logSession()">Log Session & Commit</button>
+    </div>
+
+    <div id="view-timer" class="view container">
+        <h2 style="text-align: center;">Interval Rest</h2>
+        <div class="timer-circle" id="timer-display">00:00</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <button class="btn" onclick="startTimer(90)">90s (Isolation)</button>
+            <button class="btn btn-outline" onclick="startTimer(120)">120s (Heavy)</button>
+        </div>
+        <button class="btn" style="margin-top: 15px; background: #222; color: #FFF;" onclick="clearInterval(timerInterval); document.getElementById('timer-display').classList.remove('running'); document.getElementById('timer-display').innerText = '00:00';">Reset</button>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-item active" id="nav-home" onclick="switchView('home')">Log</div>
+        <div class="nav-item" id="nav-protocols" onclick="switchView('protocols')">Train</div>
+        <div class="nav-item" id="nav-timer" onclick="switchView('timer')">Timer</div>
+    </div>
+
+    <script>
+        // 1. THE RELATIONAL DATABASE
+        const db = {
+            gym: {
+                pushA: { title: "Push A (Explosive)", data: [
+                    { name: 'Barbell Bench Press', load: '5x5', cue: 'Explosive upward drive, 2s controlled descent.' },
+                    { name: 'Seated DB Shoulder Press', load: '3x8', cue: 'Full vertical lockout without shrugging.' },
+                    { name: 'Lying DB Tricep Ext', load: '3x12', cue: 'Lower dumbbells slowly to the sides of temples.' },
+                    { name: 'Standing DB Lateral Raises', load: '3x15', cue: 'Pinkies high, strict isolation on side deltoid.' }
+                ]},
+                pullA: { title: "Pull A (Aesthetic)", data: [
+                    { name: 'Barbell Rows (Underhand)', load: '3x10-12', cue: 'Pull to lower stomach, 1s hard contraction.' },
+                    { name: 'Lying DB Pullovers', load: '3x12', cue: 'Keeps lats under constant tension at bottom.' },
+                    { name: 'Incline DB Bicep Curls', load: '3x12', cue: 'Full stretch at bottom, maximize peak squeeze.' },
+                    { name: 'Seated DB Shrugs', load: '3x15', cue: 'Control downward eccentric phase completely.' },
+                    { name: 'Lying Leg Raises', load: '3x15', cue: 'Execute on bench. Maintain rigid core.' }
+                ]},
+                legsA: { title: "Legs A (Power)", data: [
+                    { name: 'Barbell Squats', load: '5x5', cue: 'Drive forcefully out of the hole, tight core bracing.' },
+                    { name: 'DB RDLs', load: '3x10', cue: 'Push hips back deeply, feel stretch in hamstrings.' },
+                    { name: 'Standing DB Calf Raises', load: '4x15', cue: '2s pause at peak compression, deep heel drop.' }
+                ]},
+                pushB: { title: "Push B (Aesthetic)", data: [
+                    { name: 'Incline DB Bench Press', load: '3x10-12', cue: '3-1-1 tempo. Focus on upper chest shelf.' },
+                    { name: 'Seated DB Arnold Press', load: '3x10', cue: 'Rotational movement isolates front/lateral heads.' },
+                    { name: 'Standing DB Lateral Raises', load: '4x15-20', cue: 'High-volume execution to force blood flow.' },
+                    { name: 'DB Overhead Tricep Ext', load: '3x12', cue: 'Keep elbows pinned facing forward, deep stretch.' }
+                ]},
+                pullB: { title: "Pull B (Explosive)", data: [
+                    { name: 'Power Barbell Rows', load: '5x5', cue: 'Explosive dynamic pull from below knees to waist.' },
+                    { name: 'DB Hammer Curls', load: '3x10', cue: 'Heavy load targeting brachialis for arm width.' },
+                    { name: 'DB Farmer\'s Carries', load: '3x40m', cue: 'Grip endurance and total-body kinetic stabilization.' },
+                    { name: 'Seated DB Weighted Crunches', load: '3x15', cue: 'Isolate abdominal wall by flexing spine.' }
+                ]},
+                legsB: { title: "Legs B (Aesthetic)", data: [
+                    { name: 'DB Goblet Squats', load: '3x15', cue: 'Deep constant-tension sets without locking out.' },
+                    { name: 'DB Walking Lunges', load: '3x12/leg', cue: 'Keep torso upright to target quad sweep cleanly.' },
+                    { name: 'Seated/Standing Calf Raises', load: '4x20', cue: 'High-volume metabolic pump sets.' }
+                ]}
+            },
+            home: {
+                push: { title: "Home Push (Chest/Shoulders)", data: [
+                    { name: 'Decline Chair Push-Ups', load: 'Bodyweight', cue: 'Feet on chair, hands on floor. Go to technical failure.' },
+                    { name: 'Weighted Chair Dips', load: 'BW + 10L', cue: 'Hands on chair edge, 10L jerrycan stabilized on lap. 4x10-15.' },
+                    { name: 'Jerrycan Overhead Press', load: '10L/20L', cue: 'Strict standing position. Shifting liquid forces deep core.' },
+                    { name: 'Pike Push-Ups', load: 'Bodyweight', cue: 'Hips jackknifed high. Lower skull to floor. 3 x Failure.' }
+                ]},
+                pull: { title: "Home Pull (Back/Biceps)", data: [
+                    { name: 'Single-Arm Jerrycan Rows', load: '20L Jerrycan', cue: 'Brace on chair. Row weight directly to hip crease. 5x8-12.' },
+                    { name: 'Jerrycan Bicep Curls', load: '10L/20L', cue: 'Strict execution. Elbows glued permanently to lateral ribs. 4x12.' },
+                    { name: 'Jerrycan Upright Rows', load: '10L Jerrycan', cue: 'Drive elbows high above hands to frame deltoid caps. 4x15.' },
+                    { name: 'Reverse Floor Angels', load: 'Bodyweight', cue: 'Lying prone. Continuous shoulder blade compression. 3x20.' }
+                ]},
+                legs: { title: "Home Legs & Core", data: [
+                    { name: 'Bulgarian Split Squats', load: '1-2 Jerrycans', cue: 'Rear foot elevated on chair. Isolate single-leg depth. 4x10.' },
+                    { name: 'Jerrycan Goblet Squats', load: '20L Jerrycan', cue: 'Hug container completely to sternum. Squat past parallel. 4x15.' },
+                    { name: 'Single-Leg Glute Bridges', load: 'Bodyweight', cue: 'Drive heels into floor. Complete isometric glute lock. 4x15.' },
+                    { name: 'Hollow Body Holds', load: 'Bodyweight', cue: 'Press lower lumbar flat into floor. 4 sets to failure.' },
+                    { name: 'Jerrycan Calf Raises', load: '20L Jerrycan', cue: 'Slow execution off a step or solid book block. 4x25.' }
+                ]}
+            }
+        };
+
+        // 2. THE LOCAL STORAGE CONTROLLER
+        let sessionLogs = JSON.parse(localStorage.getItem('nevo_logs')) || [];
+        
+        function logSession() {
+            const today = new Date().toISOString().split('T')[0];
+            if (!sessionLogs.includes(today)) {
+                sessionLogs.push(today);
+                localStorage.setItem('nevo_logs', JSON.stringify(sessionLogs));
+            }
+            alert('Protocol Committed to Memory.');
+            switchView('home');
+        }
+
+        // 3. THE VIEW ROUTER & RENDER ENGINE
+        function switchView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-' + viewId).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            if(document.getElementById('nav-' + viewId)) {
+                document.getElementById('nav-' + viewId).classList.add('active');
+            }
+
+            if (viewId === 'home') initDashboard();
+        }
+
+        function loadWorkout(category, id) {
+            const routine = db[category][id];
+            document.getElementById('active-title').innerText = routine.title;
+            
+            const list = document.getElementById('workout-list');
+            list.innerHTML = '';
+            
+            routine.data.forEach(ex => {
+                list.innerHTML += `
+                    <div class="exercise-row">
+                        <div class="ex-title"><span>${ex.name}</span><span class="ex-load">${ex.load}</span></div>
+                        <div class="ex-cue">${ex.cue}</div>
+                    </div>
+                `;
+            });
+            switchView('active');
+        }
+
+        // 4. DYNAMIC CALENDAR GENERATOR
+        function initDashboard() {
+            document.getElementById('total-count').innerText = sessionLogs.length;
+            
+            const date = new Date();
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            document.getElementById('cal-month').innerText = `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+            
+            const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+            const labels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+            
+            const lblContainer = document.getElementById('calendar-labels');
+            lblContainer.innerHTML = '';
+            labels.forEach(l => lblContainer.innerHTML += `<div class="day-label">${l}</div>`);
+
+            const body = document.getElementById('calendar-body');
+            body.innerHTML = '';
+            
+            const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+            for(let i = 0; i < firstDay; i++) body.innerHTML += `<div></div>`; // padding
+
+            for(let i = 1; i <= daysInMonth; i++) {
+                // Formatting date to match YYYY-MM-DD
+                let m = (date.getMonth() + 1).toString().padStart(2, '0');
+                let d = i.toString().padStart(2, '0');
+                let dateStr = `${date.getFullYear()}-${m}-${d}`;
+                
+                let isCompleted = sessionLogs.includes(dateStr) ? 'completed' : '';
+                body.innerHTML += `<div class="cal-day ${isCompleted}">${i}</div>`;
+            }
+        }
+
+        // 5. GYM PARTNER TIMER
+        let timerInterval;
+        function startTimer(seconds) {
+            clearInterval(timerInterval);
+            let time = seconds;
+            const display = document.getElementById('timer-display');
+            display.classList.add('running');
+            
+            timerInterval = setInterval(() => {
+                let m = Math.floor(time / 60);
+                let s = time % 60;
+                display.innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+                
+                if (time <= 0) {
+                    clearInterval(timerInterval);
+                    display.classList.remove('running');
+                    alert('Rest Complete. Return to the protocol.');
+                }
+                time--;
+            }, 1000);
+        }
+
+        // Boot
+        initDashboard();
+    </script>
+</body>
+</html>
